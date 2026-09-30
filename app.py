@@ -330,10 +330,8 @@ elif menu == "Historial de Ventas":
     if not df_ventas.empty:
       # --- CORTE DE CAJA DIARIO ---
       st.subheader("💵 Corte de Caja Diario (Hoy)")
-      # Extraer fecha actual en formato YYYY-MM-DD
       hoy_str = datetime.now().strftime("%Y-%m-%d")
 
-      # Filtrar ventas que coincidan con la fecha de hoy
       df_ventas["solo_fecha"] = df_ventas["fecha"].astype(str).str.slice(0, 10)
       df_hoy = df_ventas[df_ventas["solo_fecha"] == hoy_str]
 
@@ -364,7 +362,6 @@ elif menu == "Historial de Ventas":
       )
 
       if busqueda:
-        # Filtrar el dataframe donde el cliente o el folio contengan el texto buscado
         df_filtrado = df_ventas[
             df_ventas["cliente"].str.contains(busqueda, case=False, na=False)
             | df_ventas["folio_nota"].str.contains(
@@ -375,9 +372,7 @@ elif menu == "Historial de Ventas":
         df_filtrado = df_ventas
 
       # --- BOTÓN EXCEL (CSV) ---
-      csv_data = df_ventas.drop(columns=["solo_fecha"]).to_csv(
-          index=False
-      )  # Quitamos la columna temporal
+      csv_data = df_ventas.drop(columns=["solo_fecha"]).to_csv(index=False)
       st.download_button(
           label="📥 Descargar Todo el Historial en Excel (CSV)",
           data=csv_data.encode("utf-8"),
@@ -388,7 +383,7 @@ elif menu == "Historial de Ventas":
       st.markdown("---")
       st.write(f"Mostrando {len(df_filtrado)} registro(s):")
 
-      # --- MOSTRAR LISTADO E ITERAR PARA REIMPRESIÓN ---
+      # --- MOSTRAR LISTADO E ITERAR ---
       for index, row in df_filtrado.iterrows():
         with st.expander(
             f"Folio: {row['folio_nota']} | Cliente: {row['cliente']} | Total:"
@@ -406,14 +401,13 @@ elif menu == "Historial de Ventas":
           st.write(f"**Usuario que registró:** {row['usuario']}")
 
           st.markdown("---")
-          st.markdown("**Acciones de Ticket:**")
+          st.markdown("**Acciones:**")
 
-          # Botón único para reimprimir el ticket de este registro específico
+          # 1. Botón para reimprimir ticket
           if st.button(
               f"🖨️ Generar Imagen de Ticket (Folio {row['folio_nota']})",
               key=f"reprint_{row['id']}",
           ):
-            # Generar la imagen idéntica al ticket original
             img_w, img_h = 600, 850
             t_img = Image.new("RGB", (img_w, img_h), "white")
             d_draw = ImageDraw.Draw(t_img)
@@ -506,6 +500,40 @@ elif menu == "Historial de Ventas":
                   mime="image/png",
                   key=f"down_{row['id']}",
               )
+
+          # 2. Sección protegida con contraseña para borrar orden
+          st.markdown("<br>", unsafe_allow_html=True)
+          with st.expander(
+              f"⚠️ Zona de Peligro: Borrar Folio {row['folio_nota']}"
+          ):
+            st.warning(
+                "Estás a punto de eliminar este registro permanentemente."
+            )
+            pass_borrar = st.text_input(
+                "Contraseña de Administrador para Borrar",
+                type="password",
+                key=f"pass_del_{row['id']}",
+            )
+
+            if st.button(
+                f"🗑️ Confirmar Borrado de Venta {row['folio_nota']}",
+                key=f"btn_del_{row['id']}",
+            ):
+              if pass_borrar == "NAUPAGAS2026":
+                conn_del = sqlite3.connect(DB_NAME)
+                cursor_del = conn_del.cursor()
+                cursor_del.execute(
+                    "DELETE FROM ventas WHERE id = ?", (row["id"],)
+                )
+                conn_del.commit()
+                conn_del.close()
+                st.success(
+                    f"¡Venta con Folio {row['folio_nota']} eliminada con"
+                    " éxito!"
+                )
+                st.rerun()
+              else:
+                st.error("Contraseña incorrecta para eliminar el registro.")
     else:
       st.info("Aún no hay ventas registradas en el sistema.")
   except Exception as e:
