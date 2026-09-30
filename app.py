@@ -230,132 +230,53 @@ if menu == "Nueva Venta":
         except Exception as err_fb:
           st.error(f"Error crítico al guardar la venta: {err_fb}")
 
-      # --- CREACIÓN DE TICKET ESTÉTICO Y PROFESIONAL ---
-      img_width, img_height = 600, 920
-      ticket_img = Image.new("RGB", (img_width, img_height), "white")
+      # --- CREACIÓN DE TICKET ESTILO TEXTO CLÁSICO ---
+      img_width, img_height = 620, 880
+      ticket_img = Image.new("RGB", (img_width, img_height), "#1e2229")  # Fondo oscuro estilo WhatsApp
       draw = ImageDraw.Draw(ticket_img)
 
       try:
+        # Usamos una fuente monoespaciada para que todas las letras midan lo mismo y las líneas cuadren perfecto
         font_path = "arial.ttf"
-        font_title = ImageFont.truetype(font_path, 28)
-        font_subtitle = ImageFont.truetype(font_path, 16)
-        font_bold = ImageFont.truetype(font_path, 18)
-        font_regular = ImageFont.truetype(font_path, 16)
-        font_total = ImageFont.truetype(font_path, 24)
+        font_ticket = ImageFont.truetype(font_path, 15)
       except:
-        font_title = ImageFont.load_default()
-        font_subtitle = ImageFont.load_default()
-        font_bold = ImageFont.load_default()
-        font_regular = ImageFont.load_default()
-        font_total = ImageFont.load_default()
+        font_ticket = ImageFont.load_default()
 
-      # Intentar insertar logo con borde o centrado bonito
-      y_offset = 30
-      try:
-        logo = Image.open("logo.jpg")
-        logo = logo.resize((110, 110))
-        ticket_img.paste(logo, (245, y_offset))
-        y_offset += 130
-      except:
-        y_offset = 30
-
-      # Encabezado corporativo
-      draw.text(
-          (img_width / 2, y_offset),
-          "NAUPAGAS",
-          fill="#111111",
-          anchor="mm",
-          font=font_title,
-      )
-      y_offset += 35
-      draw.text(
-          (img_width / 2, y_offset),
-          "COMPROBANTE DE VENTA OFICIAL",
-          fill="#555555",
-          anchor="mm",
-          font=font_subtitle,
-      )
-      y_offset += 25
-
-      # Línea divisoria elegante
-      draw.line(
-          [(40, y_offset), (img_width - 40, y_offset)],
-          fill="#cccccc",
-          width=2,
-      )
-      y_offset += 25
-
-      # Datos organizados del ticket
-      datos_ticket = [
-          ("Fecha y Hora:", fecha_actual),
-          ("Folio de Nota:", f"#{folio_nota}"),
-          ("Núm. de Servicio:", num_servicio),
-          ("Cliente:", cliente),
-          ("Teléfono:", telefono),
-          ("Tipo de Gas:", tipo_gas),
-          ("Cantidad Suministrada:", f"{litros:.2f} Litros / Kilos"),
-          ("Precio Unitario:", f"${precio_litro:.2f}"),
-          ("Método de Pago:", metodo_pago),
+      lineas_ticket = [
+          "==========================================",
+          "                  NAUPAGAS              ",
+          "               TICKET DE VENTA          ",
+          "==========================================",
+          f"Fecha y Hora     : {fecha_actual}",
+          f"Nota N°          : {folio_nota}",
+          f"Servicio N°      : {num_servicio}",
+          f"Cliente          : {cliente}",
+          f"Teléfono         : {telefono}",
+          "------------------------------------------",
+          f"Tipo de Venta    : {tipo_gas}",
+          f"Desglose         : {litros:.1f} Lts/Kgs",
+          f"Precio Unitario  : ${precio_litro:.2f}",
+          f"Método de Pago   : {metodo_pago}",
+          "------------------------------------------",
+          f"TOTAL A PAGAR    : ${total:.2f}",
+          "==========================================",
+          "          ¡Gracias por su preferencia!     ",
+          "==========================================",
       ]
 
-      for etiqueta, valor in datos_ticket:
-        draw.text((50, y_offset), etiqueta, fill="#666666", font=font_regular)
-        draw.text(
-            (img_width - 50, y_offset),
-            str(valor),
-            fill="#111111",
-            anchor="rt",
-            font=font_bold,
-        )
+      y_offset = 35
+      for linea in lineas_ticket:
+        # Centrar los encabezados y totales clave o alinear a la izquierda
+        if (
+            "NAUPAGAS" in linea
+            or "TICKET" in linea
+            or "Gracias" in linea
+            or "========" in linea
+        ):
+          draw.text((img_width / 2, y_offset), linea, fill="#ffffff", anchor="mm", font=font_ticket)
+        else:
+          draw.text((35, y_offset), linea, fill="#ffffff", font=font_ticket)
         y_offset += 32
-
-      y_offset += 10
-      # Línea divisoria antes del total
-      draw.line(
-          [(40, y_offset), (img_width - 40, y_offset)],
-          fill="#cccccc",
-          width=2,
-      )
-      y_offset += 30
-
-      # Cuadro destacado para el Total
-      draw.rectangle(
-          [40, y_offset, img_width - 40, y_offset + 60],
-          fill="#f8f9fa",
-          outline="#dddddd",
-          width=1,
-      )
-      draw.text(
-          (60, y_offset + 17),
-          "TOTAL A PAGAR:",
-          fill="#333333",
-          font=font_bold,
-      )
-      draw.text(
-          (img_width - 60, y_offset + 15),
-          f"${total:,.2f}",
-          fill="#000000",
-          anchor="rt",
-          font=font_total,
-      )
-      y_offset += 90
-
-      # Pie de página agradable
-      draw.text(
-          (img_width / 2, y_offset),
-          "¡Gracias por su preferencia!",
-          fill="#444444",
-          anchor="mm",
-          font=font_bold,
-      )
-      y_offset += 30
-      draw.text(
-          (img_width / 2, y_offset),
-          "Servicio seguro y garantizado de gas",
-          fill="#888888",
-          anchor="mm",
-          font=font_subtitle,
-      )
 
       ticket_path = "ticket_generado.png"
       ticket_img.save(ticket_path)
@@ -528,122 +449,56 @@ elif menu == "Historial de Ventas":
               f"🖨️ Generar Imagen de Ticket (Folio {row['folio_nota']})",
               key=f"reprint_{row['id']}",
           ):
-            img_w, img_h = 600, 920
-            t_img = Image.new("RGB", (img_w, img_h), "white")
+            img_w, img_h = 620, 880
+            t_img = Image.new("RGB", (img_w, img_h), "#1e2229")
             d_draw = ImageDraw.Draw(t_img)
 
             try:
               f_path = "arial.ttf"
-              ft_title = ImageFont.truetype(f_path, 28)
-              ft_sub = ImageFont.truetype(f_path, 16)
-              ft_bold = ImageFont.truetype(f_path, 18)
-              ft_reg = ImageFont.truetype(f_path, 16)
-              ft_tot = ImageFont.truetype(f_path, 24)
+              ft_ticket = ImageFont.truetype(f_path, 15)
             except:
-              ft_title = ImageFont.load_default()
-              ft_sub = ImageFont.load_default()
-              ft_bold = ImageFont.load_default()
-              ft_reg = ImageFont.load_default()
-              ft_tot = ImageFont.load_default()
+              ft_ticket = ImageFont.load_default()
 
-            y_off = 30
-            try:
-              logo_img = Image.open("logo.jpg")
-              logo_img = logo_img.resize((110, 110))
-              t_img.paste(logo_img, (245, y_off))
-              y_off += 130
-            except:
-              y_off = 30
-
-            d_draw.text(
-                (img_w / 2, y_off),
-                "NAUPAGAS",
-                fill="#111111",
-                anchor="mm",
-                font=ft_title,
-            )
-            y_off += 35
-            d_draw.text(
-                (img_w / 2, y_off),
-                "REIMPRESIÓN DE TICKET OFICIAL",
-                fill="#555555",
-                anchor="mm",
-                font=ft_sub,
-            )
-            y_off += 25
-
-            d_draw.line(
-                [(40, y_off), (img_w - 40, y_off)], fill="#cccccc", width=2
-            )
-            y_off += 25
-
-            reimp_datos = [
-                ("Fecha y Hora:", row["fecha"]),
-                ("Folio de Nota:", f"#{row['folio_nota']}"),
-                ("Núm. de Servicio:", row["num_servicio"]),
-                ("Cliente:", row["cliente"]),
-                ("Teléfono:", row["telefono"]),
-                ("Tipo de Gas:", row["tipo_gas"]),
-                ("Cantidad Suministrada:", f"{row['litros']:.2f} Litros / Kilos"),
-                ("Precio Unitario:", f"${row['precio_litro']:.2f}"),
-                ("Método de Pago:", row["metodo_pago"]),
+            reimp_lineas = [
+                "==========================================",
+                "                  NAUPAGAS              ",
+                "          REIMPRESIÓN DE TICKET         ",
+                "==========================================",
+                f"Fecha y Hora     : {row['fecha']}",
+                f"Nota N°          : {row['folio_nota']}",
+                f"Servicio N°      : {row['num_servicio']}",
+                f"Cliente          : {row['cliente']}",
+                f"Teléfono         : {row['telefono']}",
+                "------------------------------------------",
+                f"Tipo de Venta    : {row['tipo_gas']}",
+                f"Desglose         : {row['litros']:.1f} Lts/Kgs",
+                f"Precio Unitario  : ${row['precio_litro']:.2f}",
+                f"Método de Pago   : {row['metodo_pago']}",
+                "------------------------------------------",
+                f"TOTAL A PAGAR    : ${row['total']:.2f}",
+                "==========================================",
+                "          ¡Gracias por su preferencia!     ",
+                "==========================================",
             ]
 
-            for d_etiq, d_val in reimp_datos:
-              d_draw.text(
-                  (50, y_off), d_etiq, fill="#666666", font=ft_reg
-              )
-              d_draw.text(
-                  (img_w - 50, y_off),
-                  str(d_val),
-                  fill="#111111",
-                  anchor="rt",
-                  font=ft_bold,
-              )
+            y_off = 35
+            for r_linea in reimp_lineas:
+              if (
+                  "NAUPAGAS" in r_linea
+                  or "REIMPRESIÓN" in r_linea
+                  or "Gracias" in r_linea
+                  or "========" in r_linea
+              ):
+                d_draw.text(
+                    (img_w / 2, y_off),
+                    r_linea,
+                    fill="#ffffff",
+                    anchor="mm",
+                    font=ft_ticket,
+                )
+              else:
+                d_draw.text((35, y_off), r_linea, fill="#ffffff", font=ft_ticket)
               y_off += 32
-
-            y_off += 10
-            d_draw.line(
-                [(40, y_off), (img_w - 40, y_off)], fill="#cccccc", width=2
-            )
-            y_off += 30
-
-            d_draw.rectangle(
-                [40, y_off, img_w - 40, y_off + 60],
-                fill="#f8f9fa",
-                outline="#dddddd",
-                width=1,
-            )
-            d_draw.text(
-                (60, y_off + 17),
-                "TOTAL A PAGAR:",
-                fill="#333333",
-                font=ft_bold,
-            )
-            d_draw.text(
-                (img_w - 60, y_off + 15),
-                f"${row['total']:,.2f}",
-                fill="#000000",
-                anchor="rt",
-                font=ft_tot,
-            )
-            y_off += 90
-
-            d_draw.text(
-                (img_w / 2, y_off),
-                "¡Gracias por su preferencia!",
-                fill="#444444",
-                anchor="mm",
-                font=ft_bold,
-            )
-            y_off += 30
-            d_draw.text(
-                (img_w / 2, y_off),
-                "Servicio seguro y garantizado de gas",
-                fill="#888888",
-                anchor="mm",
-                font=ft_sub,
-            )
 
             path_reimp = f"ticket_reimp_{row['folio_nota']}.png"
             t_img.save(path_reimp)
@@ -662,7 +517,7 @@ elif menu == "Historial de Ventas":
 
           st.markdown("<br>", unsafe_allow_html=True)
           with st.expander(
-              f"⚠️ Zona de Peligro: Borrar Folio {row['folio_nota']}"
+              f"⚠️️ Zona de Peligro: Borrar Folio {row['folio_nota']}"
           ):
             st.warning(
                 "Estás a punto de eliminar este registro permanentemente."
@@ -677,7 +532,7 @@ elif menu == "Historial de Ventas":
                 f"🗑️ Confirmar Borrado de Venta {row['folio_nota']}",
                 key=f"btn_del_{row['id']}",
             ):
-              if pass_borrar == "NAUPAGAS2026":
+              if pass_borrar == "NAUPA2026":
                 conn_del = sqlite3.connect(DB_NAME)
                 cursor_del = conn_del.cursor()
                 cursor_del.execute(
