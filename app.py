@@ -677,7 +677,7 @@ elif menu == "Historial de Ventas":
                 f"🗑️ Confirmar Borrado de Venta {row['folio_nota']}",
                 key=f"btn_del_{row['id']}",
             ):
-              if pass_borrar == "NAUPA2026":
+              if pass_borrar == "NAUPAGAS2026":
                 conn_del = sqlite3.connect(DB_NAME)
                 cursor_del = conn_del.cursor()
                 cursor_del.execute(
