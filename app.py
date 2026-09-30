@@ -8,7 +8,7 @@ import streamlit as st
 
 # Configuración de la página
 st.set_page_config(
-    page_title="NAUPAGAS - Sistema de Ventas", page_icon="⛽", layout="centered"
+    page_title="NAUPAGAS - Sistema de Ventas", page_icon="logo.jpg", layout="centered"
 )
 
 # Base de datos local
@@ -40,16 +40,31 @@ def init_db():
 
 init_db()
 
-# Control de Sesión (Login simple)
+# Control de Sesión (Login simple con Logo)
 if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-  st.title("⛽ NAUPAGAS - Iniciar Sesión")
+  col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+  with col_l2:
+    try:
+      st.image("logo.jpg", width=150)
+    except:
+      st.write("⛽")
+
+  st.markdown(
+      "<h2 style='text-align: center;'>NAUPAGAS</h2>", unsafe_allow_html=True
+  )
+  st.markdown(
+      "<p style='text-align: center; color: gray;'>Sistema de Control de"
+      " Ventas</p>",
+      unsafe_allow_html=True,
+  )
+
   usuario_input = st.text_input("Usuario")
   password_input = st.text_input("Contraseña", type="password")
 
-  if st.button("Entrar", type="primary"):
+  if st.button("Entrar", type="primary", use_container_width=True):
     if usuario_input == "NAUPA" and password_input == "NAUPA2026":
       st.session_state.logged_in = True
       st.rerun()
@@ -57,17 +72,26 @@ if not st.session_state.logged_in:
       st.error("Usuario o contraseña incorrectos")
   st.stop()
 
-# --- MENÚ LATERAL ---
-st.sidebar.title("Menú Principal")
+# --- MENÚ LATERAL CON LOGO ---
+st.sidebar.image("logo.jpg", use_container_width=True)
+st.sidebar.title("NAUPAGAS")
 menu = st.sidebar.radio("Ir a:", ["Nueva Venta", "Historial de Ventas"])
 
+st.sidebar.markdown("---")
 if st.sidebar.button("Cerrar Sesión"):
   st.session_state.logged_in = False
   st.rerun()
 
 # --- OPCIÓN 1: NUEVA VENTA (CON MODO OFFLINE) ---
 if menu == "Nueva Venta":
-  st.title("⛽ NAUPAGAS - Registro de Venta")
+  col_t1, col_t2 = st.columns([1, 4])
+  with col_t1:
+    try:
+      st.image("logo.jpg", width=60)
+    except:
+      pass
+  with col_t2:
+    st.title("Registro de Venta")
 
   with st.form("form_venta"):
     st.subheader("Datos del Servicio")
@@ -158,7 +182,6 @@ if menu == "Nueva Venta":
             " la calle!"
         )
       except Exception as e:
-        # Respaldo automático de emergencia local si la conexión principal falla
         try:
           fallback_db = "respaldo_emergencia_ventas.db"
           conn_fb = sqlite3.connect(fallback_db)
@@ -329,7 +352,14 @@ if menu == "Nueva Venta":
 
 # --- OPCIÓN 2: HISTORIAL DE VENTAS Y FILTRO POR FECHAS ---
 elif menu == "Historial de Ventas":
-  st.title("📊 Historial de Ventas y Corte de Caja")
+  col_th1, col_th2 = st.columns([1, 4])
+  with col_th1:
+    try:
+      st.image("logo.jpg", width=60)
+    except:
+      pass
+  with col_th2:
+    st.title("Historial y Corte de Caja")
 
   try:
     conn = sqlite3.connect(DB_NAME)
@@ -360,7 +390,6 @@ elif menu == "Historial de Ventas":
             "Hasta la fecha:", value=max_fecha, min_value=fecha_inicio
         )
 
-      # Aplicar filtro de fechas al dataframe
       df_ventas["date_obj"] = pd.to_datetime(
           df_ventas["solo_fecha"]
       ).dt.date
@@ -371,7 +400,7 @@ elif menu == "Historial de Ventas":
 
       st.markdown("---")
 
-      # --- CORTE DE CAJA DEL PERIODO SELECCIONADO ---
+      # --- CORTE DE CAJA ---
       st.subheader(
           f"💵 Corte de Caja del {fecha_inicio} al {fecha_fin}"
       )
@@ -398,7 +427,7 @@ elif menu == "Historial de Ventas":
 
       st.markdown("---")
 
-      # --- BARRA DE BÚSQUEDA ADICIONAL ---
+      # --- BÚSQUEDA ---
       busqueda = st.text_input(
           "🔍 Buscar por Cliente o Folio de Nota en este periodo",
           placeholder="Escribe el nombre o número...",
@@ -414,7 +443,7 @@ elif menu == "Historial de Ventas":
       else:
         df_final = df_filtrado_fechas
 
-      # --- BOTÓN EXCEL (CSV) ---
+      # --- EXCEL ---
       csv_data = df_ventas.drop(columns=["solo_fecha", "date_obj"]).to_csv(
           index=False
       )
@@ -428,7 +457,6 @@ elif menu == "Historial de Ventas":
       st.markdown("---")
       st.write(f"Mostrando {len(df_final)} registro(s):")
 
-      # --- MOSTRAR LISTADO E ITERAR ---
       for index, row in df_final.iterrows():
         with st.expander(
             f"Folio: {row['folio_nota']} | Cliente: {row['cliente']} | Total:"
@@ -448,7 +476,6 @@ elif menu == "Historial de Ventas":
           st.markdown("---")
           st.markdown("**Acciones:**")
 
-          # 1. Botón para reimprimir ticket
           if st.button(
               f"🖨️ Generar Imagen de Ticket (Folio {row['folio_nota']})",
               key=f"reprint_{row['id']}",
@@ -546,7 +573,6 @@ elif menu == "Historial de Ventas":
                   key=f"down_{row['id']}",
               )
 
-          # 2. Sección protegida con contraseña nueva (NAUPA2026) para borrar orden
           st.markdown("<br>", unsafe_allow_html=True)
           with st.expander(
               f"⚠️ Zona de Peligro: Borrar Folio {row['folio_nota']}"
