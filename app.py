@@ -2,6 +2,7 @@ import os
 import sqlite3
 import urllib.parse
 from datetime import datetime
+import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import streamlit as st
 
@@ -17,7 +18,6 @@ DB_NAME = "gasera_historial.db"
 def init_db():
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
-  # Creamos la tabla con la estructura limpia
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS ventas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +109,6 @@ if menu == "Nueva Venta":
     submitted = st.form_submit_button("Generar Ticket y Registrar Venta")
 
   if submitted:
-    # Validaciones estrictas antes de procesar
     errores = []
     if not folio_nota.isdigit():
       errores.append("El Folio de Nota debe contener únicamente números.")
@@ -130,7 +129,6 @@ if menu == "Nueva Venta":
       fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       try:
-        # Guardar en base de datos de forma segura
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute(
@@ -155,7 +153,6 @@ if menu == "Nueva Venta":
         conn.commit()
         conn.close()
       except Exception as e:
-        # Si por algo la tabla vieja sigue causando conflicto, la recreamos limpiamente
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute("DROP TABLE IF EXISTS ventas")
@@ -212,7 +209,6 @@ if menu == "Nueva Venta":
         font_bold = ImageFont.load_default()
         font_regular = ImageFont.load_default()
 
-      # Intentar poner logo si existe
       try:
         logo = Image.open("logo.jpg")
         logo = logo.resize((100, 100))
@@ -277,11 +273,9 @@ if menu == "Nueva Venta":
           font=font_bold,
       )
 
-      # Guardar archivo temporal para descarga
       ticket_path = "ticket_generado.png"
       ticket_img.save(ticket_path)
 
-      # Guardar en Session State para que no desaparezca al interactuar
       st.session_state["ticket_generado"] = ticket_path
       st.session_state["telefono_cliente"] = telefono
       st.session_state["total_venta"] = total
@@ -289,7 +283,6 @@ if menu == "Nueva Venta":
 
       st.success("¡Venta registrada y ticket generado con éxito!")
 
-  # Mostrar opciones de ticket generado si existe en memoria
   if "ticket_generado" in st.session_state:
     st.image(
         st.session_state["ticket_generado"],
@@ -325,29 +318,195 @@ if menu == "Nueva Venta":
 
 # --- OPCIÓN 2: HISTORIAL DE VENTAS ---
 elif menu == "Historial de Ventas":
-  st.title("📊 Historial de Ventas Registradas")
+  st.title("📊 Historial de Ventas y Corte de Caja")
 
   try:
     conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT folio_nota, num_servicio, fecha, cliente, telefono, tipo_gas,"
-        " total, metodo_pago FROM ventas ORDER BY id DESC"
+    df_ventas = pd.read_sql_query(
+        "SELECT * FROM ventas ORDER BY id DESC", conn
     )
-    registros = cursor.fetchall()
     conn.close()
 
-    if registros:
-      for reg in registros:
+    if not df_ventas.empty:
+      # --- CORTE DE CAJA DIARIO ---
+      st.subheader("💵 Corte de Caja Diario (Hoy)")
+      # Extraer fecha actual en formato YYYY-MM-DD
+      hoy_str = datetime.now().strftime("%Y-%m-%d")
+
+      # Filtrar ventas que coincidan con la fecha de hoy
+      df_ventas["solo_fecha"] = df_ventas["fecha"].astype(str).str.slice(0, 10)
+      df_hoy = df_ventas[df_ventas["solo_fecha"] == hoy_str]
+
+      if not df_hoy.empty:
+        total_hoy = df_hoy["total"].sum()
+        efectivo_hoy = df_hoy[df_hoy["metodo_pago"] == "Efectivo"][
+            "total"
+        ].sum()
+        tarjeta_hoy = df_hoy[df_hoy["metodo_pago"] == "Tarjeta"]["total"].sum()
+        trans_hoy = df_hoy[df_hoy["metodo_pago"] == "Transferencia"][
+            "total"
+        ].sum()
+
+        col_c1, col_c2, col_c3, col_c4 = st.columns(4)
+        col_c1.metric("Total Hoy", f"${total_hoy:,.2f}")
+        col_c2.metric("Efectivo", f"${efectivo_hoy:,.2f}")
+        col_c3.metric("Tarjeta", f"${tarjeta_hoy:,.2f}")
+        col_c4.metric("Transferencia", f"${trans_hoy:,.2f}")
+      else:
+        st.info("No hay ventas registradas el día de hoy todavía.")
+
+      st.markdown("---")
+
+      # --- BARRA DE BÚSQUEDA ---
+      busqueda = st.text_input(
+          "🔍 Buscar por Cliente o Folio de Nota",
+          placeholder="Escribe el nombre o número...",
+      )
+
+      if busqueda:
+        # Filtrar el dataframe donde el cliente o el folio contengan el texto buscado
+        df_filtrado = df_ventas[
+            df_ventas["cliente"].str.contains(busqueda, case=False, na=False)
+            | df_ventas["folio_nota"].str.contains(
+                busqueda, case=False, na=False
+            )
+        ]
+      else:
+        df_filtrado = df_ventas
+
+      # --- BOTÓN EXCEL (CSV) ---
+      csv_data = df_ventas.drop(columns=["solo_fecha"]).to_csv(
+          index=False
+      )  # Quitamos la columna temporal
+      st.download_button(
+          label="📥 Descargar Todo el Historial en Excel (CSV)",
+          data=csv_data.encode("utf-8"),
+          file_name=f"Historial_Ventas_{datetime.now().strftime('%Y-%m-%d')}.csv",
+          mime="text/csv",
+      )
+
+      st.markdown("---")
+      st.write(f"Mostrando {len(df_filtrado)} registro(s):")
+
+      # --- MOSTRAR LISTADO E ITERAR PARA REIMPRESIÓN ---
+      for index, row in df_filtrado.iterrows():
         with st.expander(
-            f"Folio: {reg[0]} | Cliente: {reg[3]} | Total: ${reg[6]:.2f}"
+            f"Folio: {row['folio_nota']} | Cliente: {row['cliente']} | Total:"
+            f" ${row['total']:.2f} ({row['fecha']})"
         ):
-          st.write(f"**Fecha:** {reg[2]}")
-          st.write(f"**Núm. Servicio:** {reg[1]}")
-          st.write(f"**Teléfono:** {reg[4]}")
-          st.write(f"**Tipo de Gas:** {reg[5]}")
-          st.write(f"**Método de Pago:** {reg[7]}")
+          st.write(f"**Fecha y Hora:** {row['fecha']}")
+          st.write(f"**Núm. Servicio:** {row['num_servicio']}")
+          st.write(f"**Teléfono:** {row['telefono']}")
+          st.write(f"**Tipo de Gas:** {row['tipo_gas']}")
+          st.write(
+              f"**Cantidad:** {row['litros']} Litros/Kilos (Precio unitario:"
+              f" ${row['precio_litro']:.2f})"
+          )
+          st.write(f"**Método de Pago:** {row['metodo_pago']}")
+          st.write(f"**Usuario que registró:** {row['usuario']}")
+
+          st.markdown("---")
+          st.markdown("**Acciones de Ticket:**")
+
+          # Botón único para reimprimir el ticket de este registro específico
+          if st.button(
+              f"🖨️ Generar Imagen de Ticket (Folio {row['folio_nota']})",
+              key=f"reprint_{row['id']}",
+          ):
+            # Generar la imagen idéntica al ticket original
+            img_w, img_h = 600, 850
+            t_img = Image.new("RGB", (img_w, img_h), "white")
+            d_draw = ImageDraw.Draw(t_img)
+
+            try:
+              f_path = "arial.ttf"
+              ft_title = ImageFont.truetype(f_path, 26)
+              ft_bold = ImageFont.truetype(f_path, 18)
+              ft_reg = ImageFont.truetype(f_path, 16)
+            except:
+              ft_title = ImageFont.load_default()
+              ft_bold = ImageFont.load_default()
+              ft_reg = ImageFont.load_default()
+
+            try:
+              logo_img = Image.open("logo.jpg")
+              logo_img = logo_img.resize((100, 100))
+              t_img.paste(logo_img, (250, 20))
+              y_off = 130
+            except:
+              y_off = 30
+
+            d_draw.text(
+                (img_w / 2, y_off),
+                "NAUPAGAS",
+                fill="black",
+                anchor="mm",
+                font=ft_title,
+            )
+            y_off += 35
+            d_draw.text(
+                (img_w / 2, y_off),
+                "REIMPRESIÓN DE TICKET",
+                fill="gray",
+                anchor="mm",
+                font=ft_bold,
+            )
+            y_off += 30
+
+            sep = "-" * 50
+            d_draw.text((30, y_off), sep, fill="black", font=ft_bold)
+            y_off += 25
+
+            reimp_datos = [
+                f"Fecha: {row['fecha']}",
+                f"Folio Nota: {row['folio_nota']}",
+                f"Núm. Servicio: {row['num_servicio']}",
+                f"Cliente: {row['cliente']}",
+                f"Teléfono: {row['telefono']}",
+                f"Tipo de Gas: {row['tipo_gas']}",
+                f"Cantidad: {row['litros']:.2f} Litros/Kilos",
+                f"Precio x Litro: ${row['precio_litro']:.2f}",
+                f"Método de Pago: {row['metodo_pago']}",
+            ]
+
+            for d_dato in reimp_datos:
+              d_draw.text((30, y_off), d_dato, fill="black", font=ft_reg)
+              y_off += 25
+
+            d_draw.text((30, y_off), sep, fill="black", font=ft_bold)
+            y_off += 30
+
+            d_draw.text(
+                (30, y_off),
+                f"TOTAL A PAGAR: ${row['total']:.2f}",
+                fill="black",
+                font=ft_title,
+            )
+            y_off += 50
+
+            d_draw.text(
+                (img_w / 2, y_off),
+                "¡Gracias por su preferencia!",
+                fill="gray",
+                anchor="mm",
+                font=ft_bold,
+            )
+
+            path_reimp = f"ticket_reimp_{row['folio_nota']}.png"
+            t_img.save(path_reimp)
+
+            st.success(f"¡Ticket del Folio {row['folio_nota']} generado!")
+            st.image(path_reimp, use_container_width=True)
+
+            with open(path_reimp, "rb") as f_down:
+              st.download_button(
+                  label=f"📥 Descargar Ticket Folio {row['folio_nota']}",
+                  data=f_down,
+                  file_name=f"Ticket_{row['folio_nota']}.png",
+                  mime="image/png",
+                  key=f"down_{row['id']}",
+              )
     else:
       st.info("Aún no hay ventas registradas en el sistema.")
-  except:
+  except Exception as e:
     st.info("Aún no hay registros en la base de datos.")
