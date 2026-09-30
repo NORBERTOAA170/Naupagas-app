@@ -17,6 +17,7 @@ DB_NAME = "gasera_historial.db"
 def init_db():
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
+  # Creamos la tabla con la estructura limpia
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS ventas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,14 +72,11 @@ if menu == "Nueva Venta":
   with st.form("form_venta"):
     st.subheader("Datos del Servicio")
 
-    # Validación de Folio de Nota: Solo números
     folio_nota = st.text_input(
         "Folio de Nota (Solo números)",
         placeholder="Ej. 1024",
         help="Escribe únicamente dígitos",
     )
-
-    # Validación de Número de Servicio: Solo números
     num_servicio = st.text_input(
         "Número de Servicio / Orden (Solo números)",
         placeholder="Ej. 5842",
@@ -87,8 +85,6 @@ if menu == "Nueva Venta":
 
     st.subheader("Datos del Cliente")
     cliente = st.text_input("Nombre del Cliente", placeholder="Juan Pérez")
-
-    # Validación de Teléfono: Exactamente 10 dígitos numéricos
     telefono = st.text_input(
         "Teléfono a 10 dígitos (Sin espacios ni guiones)",
         max_chars=10,
@@ -133,30 +129,73 @@ if menu == "Nueva Venta":
       total = litros * precio_litro
       fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-      # Guardar en base de datos
-      conn = sqlite3.connect(DB_NAME)
-      cursor = conn.cursor()
-      cursor.execute(
-          """
-                INSERT INTO ventas (folio_nota, num_servicio, fecha, cliente, telefono, tipo_gas, litros, precio_litro, total, metodo_pago, usuario)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-          (
-              folio_nota,
-              num_servicio,
-              fecha_actual,
-              cliente,
-              telefono,
-              tipo_gas,
-              litros,
-              precio_litro,
-              total,
-              metodo_pago,
-              "NAUPA",
-          ),
-      )
-      conn.commit()
-      conn.close()
+      try:
+        # Guardar en base de datos de forma segura
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+                    INSERT INTO ventas (folio_nota, num_servicio, fecha, cliente, telefono, tipo_gas, litros, precio_litro, total, metodo_pago, usuario)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+            (
+                folio_nota,
+                num_servicio,
+                fecha_actual,
+                cliente,
+                telefono,
+                tipo_gas,
+                litros,
+                precio_litro,
+                total,
+                metodo_pago,
+                "NAUPA",
+            ),
+        )
+        conn.commit()
+        conn.close()
+      except Exception as e:
+        # Si por algo la tabla vieja sigue causando conflicto, la recreamos limpiamente
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS ventas")
+        cursor.execute("""
+                    CREATE TABLE ventas (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        folio_nota TEXT,
+                        num_servicio TEXT,
+                        fecha TEXT,
+                        cliente TEXT,
+                        telefono TEXT,
+                        tipo_gas TEXT,
+                        litros REAL,
+                        precio_litro REAL,
+                        total REAL,
+                        metodo_pago TEXT,
+                        usuario TEXT
+                    )
+                """)
+        cursor.execute(
+            """
+                    INSERT INTO ventas (folio_nota, num_servicio, fecha, cliente, telefono, tipo_gas, litros, precio_litro, total, metodo_pago, usuario)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+            (
+                folio_nota,
+                num_servicio,
+                fecha_actual,
+                cliente,
+                telefono,
+                tipo_gas,
+                litros,
+                precio_litro,
+                total,
+                metodo_pago,
+                "NAUPA",
+            ),
+        )
+        conn.commit()
+        conn.close()
 
       # Crear Imagen del Ticket
       img_width, img_height = 600, 850
@@ -270,7 +309,6 @@ if menu == "Nueva Venta":
         )
 
     with col2:
-      # Mensaje para WhatsApp
       mensaje_wa = (
           f"Hola {cliente}, le enviamos su comprobante de venta de NAUPAGAS."
           f" Folio: {st.session_state['folio_venta']}, Total: $"
@@ -289,24 +327,27 @@ if menu == "Nueva Venta":
 elif menu == "Historial de Ventas":
   st.title("📊 Historial de Ventas Registradas")
 
-  conn = sqlite3.connect(DB_NAME)
-  cursor = conn.cursor()
-  cursor.execute(
-      "SELECT folio_nota, num_servicio, fecha, cliente, telefono, tipo_gas,"
-      " total, metodo_pago FROM ventas ORDER BY id DESC"
-  )
-  registros = cursor.fetchall()
-  conn.close()
+  try:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT folio_nota, num_servicio, fecha, cliente, telefono, tipo_gas,"
+        " total, metodo_pago FROM ventas ORDER BY id DESC"
+    )
+    registros = cursor.fetchall()
+    conn.close()
 
-  if registros:
-    for reg in registros:
-      with st.expander(
-          f"Folio: {reg[0]} | Cliente: {reg[3]} | Total: ${reg[6]:.2f}"
-      ):
-        st.write(f"**Fecha:** {reg[2]}")
-        st.write(f"**Núm. Servicio:** {reg[1]}")
-        st.write(f"**Teléfono:** {reg[4]}")
-        st.write(f"**Tipo de Gas:** {reg[5]}")
-        st.write(f"**Método de Pago:** {reg[7]}")
-  else:
-    st.info("Aún no hay ventas registradas en el sistema.")
+    if registros:
+      for reg in registros:
+        with st.expander(
+            f"Folio: {reg[0]} | Cliente: {reg[3]} | Total: ${reg[6]:.2f}"
+        ):
+          st.write(f"**Fecha:** {reg[2]}")
+          st.write(f"**Núm. Servicio:** {reg[1]}")
+          st.write(f"**Teléfono:** {reg[4]}")
+          st.write(f"**Tipo de Gas:** {reg[5]}")
+          st.write(f"**Método de Pago:** {reg[7]}")
+    else:
+      st.info("Aún no hay ventas registradas en el sistema.")
+  except:
+    st.info("Aún no hay registros en la base de datos.")
