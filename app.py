@@ -131,10 +131,10 @@ if menu == "Nueva Venta":
             "Tipo de Gas", ["Gas Estacionario", "Cilindro Portátil"]
         )
         litros = st.number_input(
-            "Litros / Kilos Suministrados", min_value=1, format="%.2f"
+            "Litros / Kilos Suministrados", min_value=0.1, format="%.2f"
         )
         precio_litro = st.number_input(
-            "Precio por Litro ($)", min_value=1, value=10.50, format="%.2f"
+            "Precio por Litro ($)", min_value=0.1, value=10.50, format="%.2f"
         )
 
         metodo_pago = st.selectbox(
