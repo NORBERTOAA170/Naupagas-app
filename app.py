@@ -656,7 +656,6 @@ if accion == "Nueva Carta Porte":
         if modo_chofer == "Catálogo de Operadores" and CATALOGO_CHOFERES_NAUPA:
             nombres_choferes = [c["nombre"] for c in CATALOGO_CHOFERES_NAUPA]
             
-            # Selector de chofer
             chofer_seleccionado = st.selectbox(
                 "Seleccione al Chofer del Catálogo", 
                 options=nombres_choferes
@@ -694,18 +693,18 @@ if accion == "Nueva Carta Porte":
                 tipo_licencia = st.selectbox("Tipo de Licencia", ["Federal", "Estatal", "Chofer / Vendedor"])
                 num_licencia = st.text_input("Número de Licencia", placeholder="Número oficial de licencia")
 
-    # 3. Unidad (Índice dinámico según la unidad del chofer seleccionado)
+    # 3. Unidad (Bloqueada y automática si es de catálogo; editable si es manual)
     with st.container(border=True):
         st.subheader("3. ⛽ Datos de la Unidad")
         col_u1, col_u2 = st.columns(2)
         with col_u1:
-            # Calcular dinámicamente la posición sin usar key bloqueante
-            idx_tipo = 0 if def_tipo_unidad_sat == "Autotanque (Pipa)" else 1
-            tipo_unidad = st.selectbox(
-                "Tipo de Unidad", 
-                ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"], 
-                index=idx_tipo
-            )
+            if modo_chofer == "Catálogo de Operadores":
+                # Si es del catálogo, se muestra fijo y bloqueado exactamente como corresponde
+                tipo_unidad = st.text_input("Tipo de Unidad (Automático por Catálogo)", value=def_tipo_unidad_sat, disabled=True)
+            else:
+                # Si es manual, el usuario puede elegirlo libremente
+                tipo_unidad = st.selectbox("Tipo de Unidad", ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"])
+                
             eco_unidad = st.text_input("Número Económico", value=def_eco, placeholder="Ej. PIPA GRANDE 2 o CILINDRERA 7")
             placas = st.text_input("Placas", value=def_placas, placeholder="Ej. XX-00-XXX")
         with col_u2:
@@ -817,7 +816,7 @@ if accion == "Nueva Carta Porte":
                     
                 dir_destino_final = f"Ruta multi-cliente / Zona de entrega: {zona_libre_destino}"
 
-    # 6. Mercancía (Lee directamente la selección actual del Tipo de Unidad)
+    # 6. Mercancía (Responde automáticamente al Tipo de Unidad determinado)
     with st.container(border=True):
         st.subheader("6. 📦 Descripción y Claves de la Mercancía")
         if tipo_unidad == "Autotanque (Pipa)":
