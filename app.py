@@ -347,7 +347,7 @@ def eliminar_carta_nube(carta_id):
             supabase.table("cartas_naupagas").delete().eq("id", carta_id).execute()
             return True
         except Exception as e:
-            st.error(f"⚠️ Error al eliminar de Supabase: {e}")
+            st.error(f"❌ Error al eliminar de Supabase: {e}")
             return False
     return False
 
@@ -618,14 +618,6 @@ with st.sidebar:
 
 ahora_mx = datetime.now(ZoneInfo("America/Mexico_City"))
 
-# ================= CALLBACKS PARA ACTUALIZACIÓN DINÁMICA DE TIPO DE UNIDAD =================
-def al_cambiar_chofer():
-    nombre_sel = st.session_state.get("chofer_select")
-    if nombre_sel:
-        datos = next((c for c in CATALOGO_CHOFERES_NAUPA if c["nombre"] == nombre_sel), None)
-        if datos:
-            st.session_state["tipo_unidad_select"] = datos["tipo_unidad_sat"]
-
 # ================= FORMULARIO PRINCIPAL =================
 if accion == "Nueva Carta Porte":
     st.title("📄 NAUPAGAS - Generador de Carta Porte")
@@ -664,12 +656,10 @@ if accion == "Nueva Carta Porte":
         if modo_chofer == "Catálogo de Operadores" and CATALOGO_CHOFERES_NAUPA:
             nombres_choferes = [c["nombre"] for c in CATALOGO_CHOFERES_NAUPA]
             
-            # Selector de chofer con callback para forzar cambio de tipo de unidad
+            # Selector de chofer
             chofer_seleccionado = st.selectbox(
                 "Seleccione al Chofer del Catálogo", 
-                options=nombres_choferes,
-                key="chofer_select",
-                on_change=al_cambiar_chofer
+                options=nombres_choferes
             )
             
             datos_chofer_actual = next((c for c in CATALOGO_CHOFERES_NAUPA if c["nombre"] == chofer_seleccionado), CATALOGO_CHOFERES_NAUPA[0])
@@ -685,10 +675,6 @@ if accion == "Nueva Carta Porte":
             def_cant_30 = datos_chofer_actual.get("cant_30", 0)
             def_aseguradora = datos_chofer_actual["aseguradora"]
             def_poliza = datos_chofer_actual["poliza"]
-
-            # Inicializar session_state la primera vez
-            if "tipo_unidad_select" not in st.session_state:
-                st.session_state["tipo_unidad_select"] = def_tipo_unidad_sat
 
             # Rectángulo ordenado en 2x2 para Catálogo
             col_c1, col_c2 = st.columns(2)
@@ -708,15 +694,17 @@ if accion == "Nueva Carta Porte":
                 tipo_licencia = st.selectbox("Tipo de Licencia", ["Federal", "Estatal", "Chofer / Vendedor"])
                 num_licencia = st.text_input("Número de Licencia", placeholder="Número oficial de licencia")
 
-    # 3. Unidad (Sincronizada con estado forzado)
+    # 3. Unidad (Índice dinámico según la unidad del chofer seleccionado)
     with st.container(border=True):
         st.subheader("3. ⛽ Datos de la Unidad")
         col_u1, col_u2 = st.columns(2)
         with col_u1:
+            # Calcular dinámicamente la posición sin usar key bloqueante
+            idx_tipo = 0 if def_tipo_unidad_sat == "Autotanque (Pipa)" else 1
             tipo_unidad = st.selectbox(
                 "Tipo de Unidad", 
                 ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"], 
-                key="tipo_unidad_select"
+                index=idx_tipo
             )
             eco_unidad = st.text_input("Número Económico", value=def_eco, placeholder="Ej. PIPA GRANDE 2 o CILINDRERA 7")
             placas = st.text_input("Placas", value=def_placas, placeholder="Ej. XX-00-XXX")
@@ -829,7 +817,7 @@ if accion == "Nueva Carta Porte":
                     
                 dir_destino_final = f"Ruta multi-cliente / Zona de entrega: {zona_libre_destino}"
 
-    # 6. Mercancía (Responde automáticamente al Tipo de Unidad activo)
+    # 6. Mercancía (Lee directamente la selección actual del Tipo de Unidad)
     with st.container(border=True):
         st.subheader("6. 📦 Descripción y Claves de la Mercancía")
         if tipo_unidad == "Autotanque (Pipa)":
