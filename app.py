@@ -663,7 +663,7 @@ if accion == "Nueva Carta Porte":
             
             datos_chofer_actual = next((c for c in CATALOGO_CHOFERES_NAUPA if c["nombre"] == chofer_seleccionado), CATALOGO_CHOFERES_NAUPA[0])
             
-            # Asignar datos de unidad y seguro del chofer seleccionado
+            # Asignar automáticamente los datos de unidad y seguro del chofer seleccionado
             def_tipo_unidad_sat = datos_chofer_actual["tipo_unidad_sat"]
             def_eco = datos_chofer_actual["eco"]
             def_placas = datos_chofer_actual["placas"]
@@ -693,16 +693,14 @@ if accion == "Nueva Carta Porte":
                 tipo_licencia = st.selectbox("Tipo de Licencia", ["Federal", "Estatal", "Chofer / Vendedor"])
                 num_licencia = st.text_input("Número de Licencia", placeholder="Número oficial de licencia")
 
-    # 3. Unidad (Bloqueada y automática si es de catálogo; editable si es manual)
+    # 3. Unidad (Automática según el chofer elegido en el catálogo)
     with st.container(border=True):
         st.subheader("3. ⛽ Datos de la Unidad")
         col_u1, col_u2 = st.columns(2)
         with col_u1:
             if modo_chofer == "Catálogo de Operadores":
-                # Si es del catálogo, se muestra fijo y bloqueado exactamente como corresponde
                 tipo_unidad = st.text_input("Tipo de Unidad (Automático por Catálogo)", value=def_tipo_unidad_sat, disabled=True)
             else:
-                # Si es manual, el usuario puede elegirlo libremente
                 tipo_unidad = st.selectbox("Tipo de Unidad", ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"])
                 
             eco_unidad = st.text_input("Número Económico", value=def_eco, placeholder="Ej. PIPA GRANDE 2 o CILINDRERA 7")
@@ -816,7 +814,7 @@ if accion == "Nueva Carta Porte":
                     
                 dir_destino_final = f"Ruta multi-cliente / Zona de entrega: {zona_libre_destino}"
 
-    # 6. Mercancía (Responde automáticamente al Tipo de Unidad determinado)
+    # 6. Mercancía (Responde automáticamente al Tipo de Unidad determinado por el Chofer)
     with st.container(border=True):
         st.subheader("6. 📦 Descripción y Claves de la Mercancía")
         if tipo_unidad == "Autotanque (Pipa)":
