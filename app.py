@@ -50,9 +50,9 @@ def init_supabase():
 
 supabase = init_supabase()
 
-# ================= BASE DE DATOS COMPLETA OFICIAL DE NAUPAGAS =================
+# ================= BASE DE DATOS COMPLETA OFICIAL DE NAUPAGAS (15 REGISTROS EXACTOS) =================
 CATALOGO_CHOFERES_NAUPA = [
-    # --- PIPAS (AUTOTANQUES) ---
+    # 1. MARTIN GONZALEZ LEON
     {
         "nombre": "MARTIN GONZALEZ LEON",
         "tipo": "Estatal",
@@ -69,6 +69,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150014122"
     },
+    # 2. MARCO ANTONIO ALVARADO DURAN
     {
         "nombre": "MARCO ANTONIO ALVARADO DURAN",
         "tipo": "Estatal",
@@ -85,6 +86,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150014122"
     },
+    # 3. ALFONSO GONZALEZ ORTIZ
     {
         "nombre": "ALFONSO GONZALEZ ORTIZ",
         "tipo": "Federal",
@@ -101,6 +103,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150014491"
     },
+    # 4. RODRIGO LOPEZ ALCANTARA
     {
         "nombre": "RODRIGO LOPEZ ALCANTARA",
         "tipo": "Estatal",
@@ -117,6 +120,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150015083"
     },
+    # 5. HERACLIO ARMANDO MACHUCA SILVA
     {
         "nombre": "HERACLIO ARMANDO MACHUCA SILVA",
         "tipo": "Estatal",
@@ -133,6 +137,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150013784"
     },
+    # 6. CARLOS GONZALEZ ORTIZ
     {
         "nombre": "CARLOS GONZALEZ ORTIZ",
         "tipo": "Estatal",
@@ -149,6 +154,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150015633"
     },
+    # 7. PORFIRIO HERNANDEZ CAMPUZANO
     {
         "nombre": "PORFIRIO HERNANDEZ CAMPUZANO",
         "tipo": "Estatal",
@@ -165,6 +171,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150013987"
     },
+    # 8. DAVID EUGENIO ROMERO
     {
         "nombre": "DAVID EUGENIO ROMERO",
         "tipo": "Estatal",
@@ -181,6 +188,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150015604"
     },
+    # 9. JOSE EUGENIO ROMERO
     {
         "nombre": "JOSE EUGENIO ROMERO",
         "tipo": "Estatal",
@@ -197,7 +205,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "Qualitas",
         "poliza": "7150014152"
     },
-    # --- CILINDRERAS (VEHÍCULOS REPARTIDORES) ---
+    # 10. JUAN ADRIAN MOTA MARTINEZ
     {
         "nombre": "JUAN ADRIAN MOTA MARTINEZ",
         "tipo": "Estatal",
@@ -214,6 +222,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "GNP SEGUROS",
         "poliza": "TFSM0003070351"
     },
+    # 11. JOSÉ CALIXTO ISAEL MACHUCA ORTEGA
     {
         "nombre": "JOSÉ CALIXTO ISAEL MACHUCA ORTEGA",
         "tipo": "Estatal",
@@ -230,6 +239,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "GNP SEGUROS",
         "poliza": "TFSM000307346"
     },
+    # 12. SAUL UBIRACI GALLARDO
     {
         "nombre": "SAUL UBIRACI GALLARDO",
         "tipo": "Estatal",
@@ -246,6 +256,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "AXA",
         "poliza": "YBJ006730000"
     },
+    # 13. ROSENDO SESENA HERNANDEZ
     {
         "nombre": "ROSENDO SESENA HERNANDEZ",
         "tipo": "Estatal",
@@ -262,6 +273,7 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "QUALITAS",
         "poliza": "7150013591"
     },
+    # 14. JOSE ARMANDO HERNANDEZ MIRANDA
     {
         "nombre": "JOSE ARMANDO HERNANDEZ MIRANDA",
         "tipo": "Estatal",
@@ -278,8 +290,9 @@ CATALOGO_CHOFERES_NAUPA = [
         "aseguradora": "QUALITAS",
         "poliza": "7150013816"
     },
+    # 15. JORGE ALFONSO SERRANO CORTINA (SAN MIGUEL)
     {
-        "nombre": "JORGE ALFONSO SERRANO CORTINA (SAN)",
+        "nombre": "JORGE ALFONSO SERRANO CORTINA (SAN MIGUEL)",
         "tipo": "Estatal",
         "rfc": "UA033PVAN",
         "licencia": "SECJ9201067D4",
@@ -814,7 +827,7 @@ if accion == "Nueva Carta Porte":
                     
                 dir_destino_final = f"Ruta multi-cliente / Zona de entrega: {zona_libre_destino}"
 
-    # 6. Mercancía (Detecta si la unidad actual es Autotanque o Cilindrera)
+    # 6. Mercancía (Detecta dinámicamente según la unidad oficial activa)
     with st.container(border=True):
         st.subheader("6. 📦 Descripción y Claves de la Mercancía")
         if tipo_unidad == "Autotanque (Pipa)":
