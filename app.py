@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 import os
 import requests
 import tempfile
+import re
 import streamlit as st
 
 # Supabase SDK para sincronización en la nube
@@ -63,6 +64,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "PIPA GRANDE 2",
         "capacidad_txt": "12900 Lts",
         "capacidad_num": 12900.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XV0965A",
         "aseguradora": "Qualitas",
         "poliza": "7150014122"
@@ -77,6 +80,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "PIPA GRANDE 3",
         "capacidad_txt": "13900 Lts",
         "capacidad_num": 13900.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XX2879A",
         "aseguradora": "Qualitas",
         "poliza": "7150014122"
@@ -91,6 +96,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "PIPA GRANDE 4",
         "capacidad_txt": "24000 Lts",
         "capacidad_num": 24000.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "18AF4Y",
         "aseguradora": "Qualitas",
         "poliza": "7150014491"
@@ -105,6 +112,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "1",
         "capacidad_txt": "4000 Lts",
         "capacidad_num": 4000.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XU91794",
         "aseguradora": "Qualitas",
         "poliza": "7150015083"
@@ -119,6 +128,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "5",
         "capacidad_txt": "4000 Lts",
         "capacidad_num": 4000.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XF4338B",
         "aseguradora": "Qualitas",
         "poliza": "7150013784"
@@ -133,6 +144,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "6",
         "capacidad_txt": "4500 Lts",
         "capacidad_num": 4500.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XT4418B",
         "aseguradora": "Qualitas",
         "poliza": "7150015633"
@@ -147,6 +160,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "23",
         "capacidad_txt": "4000 Lts",
         "capacidad_num": 4000.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "YB8730B",
         "aseguradora": "Qualitas",
         "poliza": "7150013987"
@@ -161,6 +176,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "3",
         "capacidad_txt": "4000 Lts",
         "capacidad_num": 4000.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XP3908B",
         "aseguradora": "Qualitas",
         "poliza": "7150015604"
@@ -175,6 +192,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "10",
         "capacidad_txt": "4000 Lts",
         "capacidad_num": 4000.0,
+        "cant_20": 0,
+        "cant_30": 0,
         "placas": "XX9342A",
         "aseguradora": "Qualitas",
         "poliza": "7150014152"
@@ -190,6 +209,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "CILINDRERA 7",
         "capacidad_txt": "19 de 20 kg y 9 de 30 kg",
         "capacidad_num": 0.0,
+        "cant_20": 19,
+        "cant_30": 9,
         "placas": "XP4212B",
         "aseguradora": "GNP SEGUROS",
         "poliza": "TFSM0003070351"
@@ -204,6 +225,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "CILINDRERA 7",
         "capacidad_txt": "13 de 20 kg y 9 de 30 kg",
         "capacidad_num": 0.0,
+        "cant_20": 13,
+        "cant_30": 9,
         "placas": "XP4211B",
         "aseguradora": "GNP SEGUROS",
         "poliza": "TFSM000307346"
@@ -218,6 +241,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "CILINDRERA 3",
         "capacidad_txt": "17 de 20 kg y 4 de 30 kg",
         "capacidad_num": 0.0,
+        "cant_20": 17,
+        "cant_30": 4,
         "placas": "XX2756A",
         "aseguradora": "AXA",
         "poliza": "YBJ006730000"
@@ -232,6 +257,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "CILINDRERA 6",
         "capacidad_txt": "19 de 20 kg y 5 de 30 kg",
         "capacidad_num": 0.0,
+        "cant_20": 19,
+        "cant_30": 5,
         "placas": "XX2755A",
         "aseguradora": "QUALITAS",
         "poliza": "7150013591"
@@ -246,6 +273,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "S/N",
         "capacidad_txt": "19 de 20 kg y 12 de 30 kg",
         "capacidad_num": 0.0,
+        "cant_20": 19,
+        "cant_30": 12,
         "placas": "XH8078B",
         "aseguradora": "QUALITAS",
         "poliza": "7150013816"
@@ -260,6 +289,8 @@ CATALOGO_CHOFERES_NAUPA = [
         "eco": "S/N",
         "capacidad_txt": "10 de 20 kg y 10 de 30 kg",
         "capacidad_num": 0.0,
+        "cant_20": 10,
+        "cant_30": 10,
         "placas": "XH8079B",
         "aseguradora": "QUALITAS",
         "poliza": "7150015084"
@@ -612,6 +643,8 @@ if accion == "Nueva Carta Porte":
     def_marca = ""
     def_capacidad_txt = "12,900 Lts"
     def_capacidad_num = 4000.0
+    def_cant_20 = 19
+    def_cant_30 = 9
     def_aseguradora = ""
     def_poliza = ""
 
@@ -633,6 +666,8 @@ if accion == "Nueva Carta Porte":
             def_marca = datos_chofer_actual["marca"]
             def_capacidad_txt = datos_chofer_actual["capacidad_txt"]
             def_capacidad_num = datos_chofer_actual["capacidad_num"] if datos_chofer_actual["capacidad_num"] > 0 else 4000.0
+            def_cant_20 = datos_chofer_actual.get("cant_20", 0)
+            def_cant_30 = datos_chofer_actual.get("cant_30", 0)
             def_aseguradora = datos_chofer_actual["aseguradora"]
             def_poliza = datos_chofer_actual["poliza"]
 
@@ -654,13 +689,18 @@ if accion == "Nueva Carta Porte":
                 tipo_licencia = st.selectbox("Tipo de Licencia", ["Federal", "Estatal", "Chofer / Vendedor"])
                 num_licencia = st.text_input("Número de Licencia", placeholder="Número oficial de licencia")
 
-    # 3. Unidad (Autollenada con la unidad del chofer seleccionado)
+    # 3. Unidad (Sincronizada dinámicamente según el chofer seleccionado)
     with st.container(border=True):
         st.subheader("3. ⛽ Datos de la Unidad")
         col_u1, col_u2 = st.columns(2)
         with col_u1:
             idx_tipo_u = 0 if def_tipo_unidad_sat == "Autotanque (Pipa)" else 1
-            tipo_unidad = st.selectbox("Tipo de Unidad", ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"], index=idx_tipo_u)
+            tipo_unidad = st.selectbox(
+                "Tipo de Unidad", 
+                ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"], 
+                index=idx_tipo_u,
+                key=f"tipo_unidad_{nombre_chofer}"
+            )
             eco_unidad = st.text_input("Número Económico", value=def_eco, placeholder="Ej. PIPA GRANDE 2 o CILINDRERA 7")
             placas = st.text_input("Placas", value=def_placas, placeholder="Ej. XX-00-XXX")
         with col_u2:
@@ -689,7 +729,6 @@ if accion == "Nueva Carta Porte":
             with col_f1:
                 f_salida_date = st.date_input("Fecha de Salida", value=ahora_mx.date())
             with col_f2:
-                # Inicializar hora de salida fija en session_state para que no cambie sola con el tiempo
                 if "hora_salida_input" not in st.session_state:
                     st.session_state.hora_salida_input = ahora_mx.strftime("%H:%M")
                 hora_salida_str = st.text_input("Hora de Salida (HH:MM)", key="hora_salida_input")
@@ -741,7 +780,6 @@ if accion == "Nueva Carta Porte":
             with col_f3:
                 f_llegada_date = st.date_input("Fecha Estimada Llegada", value=ahora_mx.date())
             with col_f4:
-                # Inicializar hora de llegada fija en session_state
                 if "hora_llegada_input" not in st.session_state:
                     st.session_state.hora_llegada_input = "18:00"
                 hora_llegada_str = st.text_input("Hora Estimada Llegada (HH:MM)", key="hora_llegada_input")
@@ -774,7 +812,7 @@ if accion == "Nueva Carta Porte":
                     
                 dir_destino_final = f"Ruta multi-cliente / Zona de entrega: {zona_libre_destino}"
 
-    # 6. Mercancía
+    # 6. Mercancía (Calculador adaptativo según el tipo de unidad del chofer)
     with st.container(border=True):
         st.subheader("6. 📦 Descripción y Claves de la Mercancía")
         if tipo_unidad == "Autotanque (Pipa)":
@@ -782,7 +820,13 @@ if accion == "Nueva Carta Porte":
             
             col_calc1, col_calc2 = st.columns(2)
             with col_calc1:
-                capacidad_total_num = st.number_input("Capacidad Total de la Pipa (Litros)", min_value=0.0, value=def_capacidad_num, step=100.0)
+                capacidad_total_num = st.number_input(
+                    "Capacidad Total de la Pipa (Litros)", 
+                    min_value=0.0, 
+                    value=def_capacidad_num, 
+                    step=100.0,
+                    key=f"cap_pipa_{nombre_chofer}"
+                )
             with col_calc2:
                 porcentaje_llenado = st.number_input("Porcentaje de Llenado (%)", min_value=0.0, max_value=100.0, value=70.0, step=0.5)
 
@@ -804,9 +848,21 @@ if accion == "Nueva Carta Porte":
             st.markdown("#### 🛢️ Configuración para Vehículo Repartidor (Cilindros)")
             col_cil1, col_cil2 = st.columns(2)
             with col_cil1:
-                cant_cil_20 = st.number_input("Cantidad de Cilindros de 20 KG", min_value=0, value=19, step=1)
+                cant_cil_20 = st.number_input(
+                    "Cantidad de Cilindros de 20 KG", 
+                    min_value=0, 
+                    value=def_cant_20, 
+                    step=1,
+                    key=f"cant_20_{nombre_chofer}"
+                )
             with col_cil2:
-                cant_cil_30 = st.number_input("Cantidad de Cilindros de 30 KG", min_value=0, value=9, step=1)
+                cant_cil_30 = st.number_input(
+                    "Cantidad de Cilindros de 30 KG", 
+                    min_value=0, 
+                    value=def_cant_30, 
+                    step=1,
+                    key=f"cant_30_{nombre_chofer}"
+                )
 
             total_piezas = cant_cil_20 + cant_cil_30
             peso_neto_gas = (cant_cil_20 * 20.0) + (cant_cil_30 * 30.0)
