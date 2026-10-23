@@ -663,7 +663,7 @@ if accion == "Nueva Carta Porte":
             
             datos_chofer_actual = next((c for c in CATALOGO_CHOFERES_NAUPA if c["nombre"] == chofer_seleccionado), CATALOGO_CHOFERES_NAUPA[0])
             
-            # Asignar automáticamente los datos de unidad y seguro del chofer seleccionado
+            # Asignar datos de unidad y seguro del chofer seleccionado
             def_tipo_unidad_sat = datos_chofer_actual["tipo_unidad_sat"]
             def_eco = datos_chofer_actual["eco"]
             def_placas = datos_chofer_actual["placas"]
@@ -693,13 +693,13 @@ if accion == "Nueva Carta Porte":
                 tipo_licencia = st.selectbox("Tipo de Licencia", ["Federal", "Estatal", "Chofer / Vendedor"])
                 num_licencia = st.text_input("Número de Licencia", placeholder="Número oficial de licencia")
 
-    # 3. Unidad (Automática según el chofer elegido en el catálogo)
+    # 3. Unidad (Lectura directa sin selectbox bloqueante cuando es catálogo)
     with st.container(border=True):
         st.subheader("3. ⛽ Datos de la Unidad")
         col_u1, col_u2 = st.columns(2)
         with col_u1:
             if modo_chofer == "Catálogo de Operadores":
-                tipo_unidad = st.text_input("Tipo de Unidad (Automático por Catálogo)", value=def_tipo_unidad_sat, disabled=True)
+                tipo_unidad = st.text_input("Tipo de Unidad (Oficial por Catálogo)", value=def_tipo_unidad_sat, disabled=True)
             else:
                 tipo_unidad = st.selectbox("Tipo de Unidad", ["Autotanque (Pipa)", "Vehículo Repartidor (Cilindrera)"])
                 
@@ -707,7 +707,7 @@ if accion == "Nueva Carta Porte":
             placas = st.text_input("Placas", value=def_placas, placeholder="Ej. XX-00-XXX")
         with col_u2:
             marca_modelo = st.text_input("Marca / Modelo", value=def_marca, placeholder="Ej. FREIGHTLINER M2 106 35K")
-            capacidad = st.text_input("Capacidad descriptiva de la unidad", value=def_capacidad_txt, placeholder="Ej. 12900 Lts o 19 de 20 kg y 9 de 30 kg")
+            capacidad = st.text_input("Capacidad descriptiva de la unidad", value=def_capacidad_txt, placeholder="Ej. 12900 Lts o 17 de 20 kg y 4 de 30 kg")
 
     # 4. Seguro (Autollenado con la póliza del chofer)
     with st.container(border=True):
@@ -814,7 +814,7 @@ if accion == "Nueva Carta Porte":
                     
                 dir_destino_final = f"Ruta multi-cliente / Zona de entrega: {zona_libre_destino}"
 
-    # 6. Mercancía (Responde automáticamente al Tipo de Unidad determinado por el Chofer)
+    # 6. Mercancía (Detecta si la unidad actual es Autotanque o Cilindrera)
     with st.container(border=True):
         st.subheader("6. 📦 Descripción y Claves de la Mercancía")
         if tipo_unidad == "Autotanque (Pipa)":
