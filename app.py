@@ -360,7 +360,7 @@ def eliminar_carta_nube(carta_id):
             supabase.table("cartas_naupagas").delete().eq("id", carta_id).execute()
             return True
         except Exception as e:
-            st.error(f"❌ Error al eliminar de Supabase: {e}")
+            st.error(f"⚠️ Error al eliminar de Supabase: {e}")
             return False
     return False
 
